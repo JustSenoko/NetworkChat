@@ -1,6 +1,6 @@
 package message;
 
-import authorization.ChatUser;
+import authorization.users.User;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -53,10 +53,10 @@ public final class MessagePatterns {
         return String.format("^%s%s%s", prefix, (args.equals("") ? "" : " "), args);
     }
 
-    public static ChatUser parseAuthMessage(String msg) {
+    public static User parseAuthMessage(String msg) {
         Matcher matcher = AUTH_REC_PATTERN.matcher(msg);
         if (matcher.matches()) {
-            return new ChatUser(matcher.group(1), matcher.group(2), null);
+            return new User(matcher.group(1), matcher.group(2), null);
         } else {
             System.out.printf(EX_MESSAGE_PATTERN, msg);
             return null;
@@ -68,10 +68,10 @@ public final class MessagePatterns {
         return String.format(AUTH_RESULT_PATTERN, res);
     }
 
-    public static ChatUser parseRegMessage(String msg) {
+    public static User parseRegMessage(String msg) {
         Matcher matcher = REG_REC_PATTERN.matcher(msg);
         if (matcher.matches()) {
-            return new ChatUser(matcher.group(1), matcher.group(2), matcher.group(3));
+            return new User(matcher.group(1), matcher.group(2), matcher.group(3));
         } else {
             System.out.printf(EX_MESSAGE_PATTERN, msg);
             return null;

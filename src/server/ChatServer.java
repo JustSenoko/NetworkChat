@@ -1,8 +1,9 @@
 package server;
 
-import authorization.ChatUser;
+import authorization.users.User;
 import authorization.AuthorizationService;
 import authorization.AuthorizationServiceImpl;
+import authorization.users.UserRepository;
 import message.MessagePatterns;
 import message.TextMessage;
 
@@ -11,6 +12,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,14 +25,29 @@ import static message.MessagePatterns.USERS_PATTERN;
 public class ChatServer {
 
     private static final int SERVER_PORT = 7777;
-    private AuthorizationService authService = new AuthorizationServiceImpl();
+    private AuthorizationService authService;
     private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) {
 
-        ChatServer chatServer = new ChatServer();
+        AuthorizationService auth;
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat",
+                    "root", "senoko");
+            UserRepository userRepository = new UserRepository(connection);
+            auth = new AuthorizationServiceImpl(userRepository);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+        ChatServer chatServer = new ChatServer(auth);
         chatServer.start();
     }
+
+    private ChatServer(AuthorizationService authService) {
+        this.authService = authService;
+    }
+
 
     private void start() {
         try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
@@ -38,7 +57,7 @@ public class ChatServer {
                 DataInputStream inp = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 System.out.println("New client connected!");
-                ChatUser user;
+                User user;
                 try {
                     String inpMessage = inp.readUTF();
                     user = authService.checkAuthorization(inpMessage);
@@ -78,7 +97,7 @@ public class ChatServer {
     }
 
     private boolean registerNewUser(String regMessage) {
-        ChatUser user = authService.checkRegistration(regMessage);
+        User user = authService.checkRegistration(regMessage);
         if (user != null) {
             return authService.addUser(user);
         }

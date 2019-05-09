@@ -16,9 +16,13 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     }
 
     @Override
-    public boolean authUser(User user) {
+    public User authUser(User user) {
         User userDB = userRepository.findUserByLogin(user.getLogin());
-        return userDB != null && userDB.getPassword().equals(user.getPassword());
+
+        if (userDB != null && userDB.getPassword().equals(user.getPassword())) {
+            return userDB;
+        }
+        return null;
     }
 
     @Override
@@ -45,6 +49,11 @@ public class AuthorizationServiceImpl implements AuthorizationService {
         }
         System.out.printf("User %s registered successful!%n", user.getLogin());
         return true;
+    }
+
+    @Override
+    public boolean updateUserInfo(String oldLogin, User newUserInfo) {
+        return userRepository.updateUserInfo(oldLogin, newUserInfo);
     }
 
 

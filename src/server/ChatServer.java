@@ -79,11 +79,12 @@ public class ChatServer {
                     continue;
                 }
 
-                if (authService.authUser(user) && !userIsOnline(user.getLogin())) {
-                    System.out.printf("User %s authorized successful!%n", user.getLogin());
+                User userDB = authService.authUser(user);
+                if (userDB != null && !userIsOnline(userDB.getLogin())) {
+                    System.out.printf("User %s authorized successful!%n", userDB.getLogin());
                     out.writeUTF(MessagePatterns.authResult(true));
                     out.flush();
-                    subscribe(user.getLogin(), socket);
+                    subscribe(userDB, socket);
                 } else {
                     System.out.printf("Wrong authorization for user %s%n", user.getLogin());
                     out.writeUTF(MessagePatterns.authResult(false));
@@ -137,16 +138,24 @@ public class ChatServer {
         sendMessage(login, userList);
     }
 
+    private void sendUserInfoMessage(User user) {
+        String userInfo = String.format(MessagePatterns.USER_INFO_RESULT_PATTERN, user.getLogin(), user.getPassword(), user.getName());
+        sendMessage(user.getLogin(), userInfo);
+    }
+
+
     void sendTextMessage(TextMessage textMessage) {
         sendMessageFromUserToUser(textMessage.getUserTo(), textMessage.getUserFrom(), textMessage.getMessage());
     }
 
-    private void subscribe(String login, Socket socket) throws IOException {
-
+    private void subscribe(User user, Socket socket) throws IOException {
+        String login = user.getLogin();
         clientHandlerMap.put(login, new ClientHandler(login, socket, this));
         String msg = String.format(MessagePatterns.CONNECTED_SEND, login);
         sendToAllUsersExceptLogin(login, msg);
 
+        // отправим сразу всю информацию о пользователе
+        sendUserInfoMessage(user);
         sendUserListMessage(login);
     }
 
@@ -164,6 +173,26 @@ public class ChatServer {
                 continue;
             }
             sendMessage(userLogin, msg);
+        }
+    }
+
+    void updateUserInfo(String oldLogin, User newUserInfo) {
+        boolean success = authService.updateUserInfo(oldLogin, newUserInfo);
+        sendMessage(oldLogin, MessagePatterns.updUserInfoResult(success));
+        if (success) {
+            String newLogin = newUserInfo.getLogin();
+            if (newLogin.equals(oldLogin)) {
+                sendUserInfoMessage(newUserInfo);
+                return;
+            }
+            String msg = String.format(MessagePatterns.USER_LOGIN_CHANGED_SEND_PATTERN, oldLogin, newLogin);
+            sendToAllUsersExceptLogin(oldLogin, msg);
+
+            ClientHandler clH = clientHandlerMap.get(oldLogin);
+            clH.setLogin(newLogin);
+            clientHandlerMap.put(newLogin, clH);
+            clientHandlerMap.remove(oldLogin);
+            sendUserInfoMessage(newUserInfo);
         }
     }
 }

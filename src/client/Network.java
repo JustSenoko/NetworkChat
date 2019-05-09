@@ -1,6 +1,8 @@
 package client;
 
 import authorization.AuthException;
+import authorization.users.User;
+import message.MessagePatterns;
 import message.TextMessage;
 
 import java.io.Closeable;
@@ -16,13 +18,15 @@ public class Network implements Closeable {
 
     private Socket socket;
     private DataInputStream in;
-    public DataOutputStream out;
+    private DataOutputStream out;
 
     private String hostName;
     private int port;
     private MessageReceiver messageReceiver;
+    private UserInfoReceiver userInfoReceiver;
 
     private String login;
+    private User user;
 
     private Thread receiverThread;
 
@@ -74,6 +78,11 @@ public class Network implements Closeable {
         }
     }
 
+    public void updateUserInfo(UserInfoReceiver resultReceiver, String newLogin, String newPassword, String newName) {
+        sendMessage(String.format(USER_INFO_RESULT_PATTERN, newLogin, newPassword, newName));
+        userInfoReceiver = resultReceiver;
+    }
+
     public void sendTextMessage(TextMessage message) {
         sendMessage(String.format(MESSAGE_SEND_PATTERN, message.getUserTo(), login, message.getMessage()));
     }
@@ -122,8 +131,29 @@ public class Network implements Closeable {
                 break;
             case USERS_PREFIX:
                 Set<String> userList = parseUserListMessage(msg);
-                messageReceiver.updateUserList(userList);//userList.toArray());
+                messageReceiver.updateUserList(userList);
                 break;
+            case USER_INFO_PREFIX:
+                user = parseUserInfoMessage(msg);
+                if (user != null) {
+                    login = user.getLogin();
+                    messageReceiver.updateUserInfo(user);
+                }
+                break;
+            case UPD_USER_INFO_PREFIX:
+                boolean success = msg.equals(updUserInfoResult(true));
+                userInfoReceiver.interpretUpdateUserInfoResult(success);
+                break;
+            case USER_LOGIN_CHANGED_PREFIX:
+                String[] oldNewLogin = parseLoginChangeMessage(msg);
+                messageReceiver.changeUserLogin(oldNewLogin);
+                break;
+            default:
+                System.out.printf(EX_MESSAGE_PATTERN, msg);
         }
+    }
+
+    public User getUserInfo() {
+        return user;
     }
 }

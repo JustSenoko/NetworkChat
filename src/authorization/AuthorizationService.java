@@ -4,11 +4,13 @@ import authorization.users.User;
 
 public interface AuthorizationService {
 
-    boolean authUser(User user);
+    User authUser(User user);
 
     User checkAuthorization(String authMessage);
 
     User checkRegistration(String regMessage);
 
     boolean addUser(User user);
+
+    boolean updateUserInfo(String oldLogin, User newUserInfo);
 }

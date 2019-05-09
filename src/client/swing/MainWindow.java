@@ -1,5 +1,6 @@
 package client.swing;
 
+import authorization.users.User;
 import client.Network;
 import client.MessageReceiver;
 import client.UnreadMessage;
@@ -25,6 +26,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
     private final JTextField messageField;
     private final JList<UnreadMessage> userList;
     private final DefaultListModel<UnreadMessage> userListModel;
+    private final JButton btnUserInfo;
 
     private Network network;
     private String userTo = "";
@@ -46,11 +48,23 @@ public class MainWindow extends JFrame implements MessageReceiver {
 
         setLayout(new BorderLayout());
 
+        JPanel userPanel = new JPanel();
+        userPanel.setSize(new Dimension(100, 0));
+        userPanel.setLayout(new BorderLayout());
+
+        btnUserInfo = new JButton();
+        btnUserInfo.setBackground(Color.BLUE);
+        btnUserInfo.setForeground(Color.WHITE);
+        btnUserInfo.setHorizontalAlignment(SwingConstants.CENTER);
+        btnUserInfo.addActionListener(e -> {
+            UserInfoDialog userInfoDialog = new UserInfoDialog(this, network);
+            userInfoDialog.setVisible(true);
+        });
+        userPanel.add(btnUserInfo, BorderLayout.NORTH);
+
         userList = new JList<>();
         userListModel = new DefaultListModel<>();
         userList.setModel(userListModel);
-        userList.setPreferredSize(new Dimension(50, 0));
-        userList.setMaximumSize(new Dimension(50, 0));
         UserListCellRenderer userListCellRenderer = new UserListCellRenderer();
         userList.setCellRenderer(userListCellRenderer);
         userList.addListSelectionListener(e -> setUserTo());
@@ -58,7 +72,9 @@ public class MainWindow extends JFrame implements MessageReceiver {
         JScrollPane scrollUsers = new JScrollPane(userList,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        add(scrollUsers, BorderLayout.WEST);
+        userPanel.add(scrollUsers, BorderLayout.CENTER);
+
+        add(userPanel, BorderLayout.WEST);
 
         msgList = new JList<>();
 
@@ -91,9 +107,14 @@ public class MainWindow extends JFrame implements MessageReceiver {
         if (!loginDialog.isConnected()) {
             System.exit(0);
         }
-        setTitle(String.format("Чат (%s)", network.getLogin()));
+
+        setChatTitle(network.getLogin());
         TextMessageCellRenderer msgListCellRenderer = new TextMessageCellRenderer(network.getLogin());
         msgList.setCellRenderer(msgListCellRenderer);
+    }
+
+    private void setChatTitle(String login) {
+        setTitle(String.format("Чат (%s)", login));
     }
 
     private void setUserTo() {
@@ -138,6 +159,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
                 msgList.ensureIndexIsVisible(msgListModel.size() - 1);
             } else {
                 userUnreadMsgMap.get(message.getUserFrom()).incUnreadCount();
+                userList.updateUI();
             }
         });
     }
@@ -191,6 +213,38 @@ public class MainWindow extends JFrame implements MessageReceiver {
             if (ix >= 0) {
                 userListModel.remove(ix);
                 //из модели ссобщений не удаляем - если он переподключится, сохранится история
+            }
+            updateUserListView();
+        });
+    }
+
+    @Override
+    public void updateUserInfo(User user) {
+        String userInfoView = String.format("%s (%s)", user.getName(), user.getLogin());
+        btnUserInfo.setText(userInfoView);
+        setChatTitle(user.getLogin());
+    }
+
+    @Override
+    public void changeUserLogin(String[] oldNewLogin) {
+        SwingUtilities.invokeLater(() -> {
+            String oldLogin = oldNewLogin[0];
+            String newLogin = oldNewLogin[1];
+            int ix = userListModel.indexOf(userUnreadMsgMap.get(oldLogin));
+            if (ix >= 0) {
+                int unreadCount = userUnreadMsgMap.get(oldLogin).getUnreadCount();
+                UnreadMessage newUser = new UnreadMessage(newLogin, unreadCount);
+                userUnreadMsgMap.remove(oldLogin);
+                userUnreadMsgMap.put(newLogin, newUser);
+
+                userListModel.remove(ix);
+                userListModel.add(ix, newUser);
+
+                DefaultListModel<TextMessage> msgModel = userMsgModelMap.get(oldLogin);
+                userMsgModelMap.put(newLogin, msgModel);
+                userMsgModelMap.remove(oldLogin);
+
+                userList.updateUI();
             }
             updateUserListView();
         });

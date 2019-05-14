@@ -1,6 +1,6 @@
 package client.swing;
 
-import authorization.users.User;
+import server.authorization.users.User;
 import client.Network;
 import client.UserInfoReceiver;
 

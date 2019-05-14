@@ -1,7 +1,7 @@
 package client.swing;
 
 import client.Network;
-import authorization.AuthException;
+import server.authorization.AuthException;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;

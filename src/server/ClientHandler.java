@@ -1,6 +1,6 @@
 package server;
 
-import authorization.users.User;
+import server.authorization.users.User;
 import message.MessagePatterns;
 import message.TextMessage;
 

@@ -1,4 +1,4 @@
-package authorization.users;
+package server.authorization.users;
 
 import java.sql.*;
 import java.util.ArrayList;

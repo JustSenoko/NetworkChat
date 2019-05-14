@@ -1,6 +1,6 @@
 package client;
 
-import authorization.users.User;
+import server.authorization.users.User;
 import message.TextMessage;
 
 import java.util.Set;

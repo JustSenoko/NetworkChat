@@ -1,8 +1,7 @@
 package client;
 
-import authorization.AuthException;
-import authorization.users.User;
-import message.MessagePatterns;
+import server.authorization.AuthException;
+import server.authorization.users.User;
 import message.TextMessage;
 
 import java.io.Closeable;

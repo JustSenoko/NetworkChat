@@ -1,4 +1,4 @@
-package authorization;
+package server.authorization;
 
 public class AuthException extends Exception {
 

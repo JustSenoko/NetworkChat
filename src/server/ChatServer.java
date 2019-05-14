@@ -1,9 +1,9 @@
 package server;
 
-import authorization.users.User;
-import authorization.AuthorizationService;
-import authorization.AuthorizationServiceImpl;
-import authorization.users.UserRepository;
+import server.authorization.users.User;
+import server.authorization.AuthorizationService;
+import server.authorization.AuthorizationServiceImpl;
+import server.authorization.users.UserRepository;
 import message.MessagePatterns;
 import message.TextMessage;
 
@@ -86,7 +86,7 @@ public class ChatServer {
                     out.flush();
                     subscribe(userDB, socket);
                 } else {
-                    System.out.printf("Wrong authorization for user %s%n", user.getLogin());
+                    System.out.printf("Wrong server.authorization for user %s%n", user.getLogin());
                     out.writeUTF(MessagePatterns.authResult(false));
                     out.flush();
                     socket.close();

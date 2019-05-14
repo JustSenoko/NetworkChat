@@ -1,8 +1,9 @@
 package server;
 
-import authorization.ChatUser;
+import authorization.users.User;
 import authorization.AuthorizationService;
 import authorization.AuthorizationServiceImpl;
+import authorization.users.UserRepository;
 import message.MessagePatterns;
 import message.TextMessage;
 
@@ -11,6 +12,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,14 +25,29 @@ import static message.MessagePatterns.USERS_PATTERN;
 public class ChatServer {
 
     private static final int SERVER_PORT = 7777;
-    private AuthorizationService authService = new AuthorizationServiceImpl();
+    private AuthorizationService authService;
     private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) {
 
-        ChatServer chatServer = new ChatServer();
+        AuthorizationService auth;
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat",
+                    "root", "senoko");
+            UserRepository userRepository = new UserRepository(connection);
+            auth = new AuthorizationServiceImpl(userRepository);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return;
+        }
+        ChatServer chatServer = new ChatServer(auth);
         chatServer.start();
     }
+
+    private ChatServer(AuthorizationService authService) {
+        this.authService = authService;
+    }
+
 
     private void start() {
         try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
@@ -38,7 +57,7 @@ public class ChatServer {
                 DataInputStream inp = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 System.out.println("New client connected!");
-                ChatUser user;
+                User user;
                 try {
                     String inpMessage = inp.readUTF();
                     user = authService.checkAuthorization(inpMessage);
@@ -60,11 +79,12 @@ public class ChatServer {
                     continue;
                 }
 
-                if (authService.authUser(user) && !userIsOnline(user.getLogin())) {
-                    System.out.printf("User %s authorized successful!%n", user.getLogin());
+                User userDB = authService.authUser(user);
+                if (userDB != null && !userIsOnline(userDB.getLogin())) {
+                    System.out.printf("User %s authorized successful!%n", userDB.getLogin());
                     out.writeUTF(MessagePatterns.authResult(true));
                     out.flush();
-                    subscribe(user.getLogin(), socket);
+                    subscribe(userDB, socket);
                 } else {
                     System.out.printf("Wrong authorization for user %s%n", user.getLogin());
                     out.writeUTF(MessagePatterns.authResult(false));
@@ -78,7 +98,7 @@ public class ChatServer {
     }
 
     private boolean registerNewUser(String regMessage) {
-        ChatUser user = authService.checkRegistration(regMessage);
+        User user = authService.checkRegistration(regMessage);
         if (user != null) {
             return authService.addUser(user);
         }
@@ -118,16 +138,24 @@ public class ChatServer {
         sendMessage(login, userList);
     }
 
+    private void sendUserInfoMessage(User user) {
+        String userInfo = String.format(MessagePatterns.USER_INFO_RESULT_PATTERN, user.getLogin(), user.getPassword(), user.getName());
+        sendMessage(user.getLogin(), userInfo);
+    }
+
+
     void sendTextMessage(TextMessage textMessage) {
         sendMessageFromUserToUser(textMessage.getUserTo(), textMessage.getUserFrom(), textMessage.getMessage());
     }
 
-    private void subscribe(String login, Socket socket) throws IOException {
-
+    private void subscribe(User user, Socket socket) throws IOException {
+        String login = user.getLogin();
         clientHandlerMap.put(login, new ClientHandler(login, socket, this));
         String msg = String.format(MessagePatterns.CONNECTED_SEND, login);
         sendToAllUsersExceptLogin(login, msg);
 
+        // отправим сразу всю информацию о пользователе
+        sendUserInfoMessage(user);
         sendUserListMessage(login);
     }
 
@@ -145,6 +173,26 @@ public class ChatServer {
                 continue;
             }
             sendMessage(userLogin, msg);
+        }
+    }
+
+    void updateUserInfo(String oldLogin, User newUserInfo) {
+        boolean success = authService.updateUserInfo(oldLogin, newUserInfo);
+        sendMessage(oldLogin, MessagePatterns.updUserInfoResult(success));
+        if (success) {
+            String newLogin = newUserInfo.getLogin();
+            if (newLogin.equals(oldLogin)) {
+                sendUserInfoMessage(newUserInfo);
+                return;
+            }
+            String msg = String.format(MessagePatterns.USER_LOGIN_CHANGED_SEND_PATTERN, oldLogin, newLogin);
+            sendToAllUsersExceptLogin(oldLogin, msg);
+
+            ClientHandler clH = clientHandlerMap.get(oldLogin);
+            clH.setLogin(newLogin);
+            clientHandlerMap.put(newLogin, clH);
+            clientHandlerMap.remove(oldLogin);
+            sendUserInfoMessage(newUserInfo);
         }
     }
 }

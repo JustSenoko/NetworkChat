@@ -1,5 +1,6 @@
 package server;
 
+import authorization.users.User;
 import message.MessagePatterns;
 import message.TextMessage;
 
@@ -13,7 +14,7 @@ import static message.MessagePatterns.*;
 class ClientHandler {
 
     private final Socket socket;
-    private final String login;
+    private String login;
     private final ChatServer chatServer;
     private DataOutputStream out;
 
@@ -45,6 +46,10 @@ class ClientHandler {
                             chatServer.unsubscribe(login);
                             clientDisconnected = true;
                             break;
+                        case USER_INFO_PREFIX:
+                            User newUserInfo = MessagePatterns.parseUserInfoMessage(msg);
+                            chatServer.updateUserInfo(login, newUserInfo);
+                            break;
                         default:
                             System.out.printf(EX_MESSAGE_PATTERN, msg);
                     }
@@ -56,6 +61,10 @@ class ClientHandler {
 
         out = new DataOutputStream(socket.getOutputStream());
         receiveThread.start();
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     void sendMessage(String msg) throws IOException {

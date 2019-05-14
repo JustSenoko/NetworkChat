@@ -1,12 +1,16 @@
 package authorization;
 
+import authorization.users.User;
+
 public interface AuthorizationService {
 
-    boolean authUser(ChatUser user);
+    User authUser(User user);
 
-    ChatUser checkAuthorization(String authMessage);
+    User checkAuthorization(String authMessage);
 
-    ChatUser checkRegistration(String regMessage);
+    User checkRegistration(String regMessage);
 
-    boolean addUser(ChatUser user);
+    boolean addUser(User user);
+
+    boolean updateUserInfo(String oldLogin, User newUserInfo);
 }

@@ -17,7 +17,6 @@ public class UserListCellRenderer extends JPanel implements ListCellRenderer<Unr
         lbUserLogin = new JLabel();
         Font f = new Font("Verdana", Font.BOLD, 14);
         lbUserLogin.setFont(f);
-
         add(lbUserLogin, BorderLayout.CENTER);
 
         lbUnread = new JLabel();

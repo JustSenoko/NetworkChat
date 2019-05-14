@@ -9,6 +9,11 @@ public class UnreadMessage {
         this.unreadCount = 0;
     }
 
+    public UnreadMessage(String login, int unreadCount) {
+        this.login = login;
+        this.unreadCount = unreadCount;
+    }
+
     public String getLogin() {
         return login;
     }

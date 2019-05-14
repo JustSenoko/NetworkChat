@@ -1,6 +1,6 @@
 package message;
 
-import authorization.ChatUser;
+import authorization.users.User;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,16 +21,28 @@ public final class MessagePatterns {
     private static final String REG_PREFIX = "/reg";
     public static final String REG_SEND_PATTERN = REG_PREFIX + " %s %s %s";
     private static final Pattern REG_REC_PATTERN = Pattern.compile(
-            patternConstructor(REG_PREFIX, "(\\w+) (\\w+) (\\w+)"));  // /reg login password name
+            patternConstructor(REG_PREFIX, "(\\w+) (\\w+) (\\w+)"), // /reg login password name
+            Pattern.UNICODE_CHARACTER_CLASS);
     private static final String REG_RESULT_PATTERN = REG_PREFIX + " %s";
 
     public static final String CONNECTED = "/connected";
     public static final String CONNECTED_SEND = CONNECTED + " %s";
-    private static final Pattern CONNECTED_REC;
+    private static final Pattern CONNECTED_REC =
+            Pattern.compile(patternConstructor(CONNECTED, "(\\w+)"));
 
-    static {
-        CONNECTED_REC = Pattern.compile(patternConstructor(CONNECTED, "(\\w+)"));
-    }
+    public static final String USER_INFO_PREFIX = "/uinfo";
+    public static final String USER_INFO_RESULT_PATTERN = USER_INFO_PREFIX + " %s %s %s"; // /uinfo login password name
+    private static final Pattern USER_INFO_RESULT_REC_PATTERN = Pattern.compile(
+            patternConstructor(USER_INFO_PREFIX, "(\\w+) (\\w+) (\\w+)"),   // /uinfo login password name
+            Pattern.UNICODE_CHARACTER_CLASS);
+
+    public static final String UPD_USER_INFO_PREFIX = "/upduinfo";
+    private static final String UPD_USER_INFO_RESULT = UPD_USER_INFO_PREFIX + " %s";
+
+    public static final String USER_LOGIN_CHANGED_PREFIX = "/chlog";
+    public static final String USER_LOGIN_CHANGED_SEND_PATTERN = USER_LOGIN_CHANGED_PREFIX + " %s %s"; // /chlog oldLogin newLogin
+    private static final Pattern USER_LOGIN_CHANGED_REC_PATTERN = Pattern.compile(
+            patternConstructor(USER_LOGIN_CHANGED_PREFIX, "(\\w+) (\\w+)"));  // /chlog oldLogin newLogin
 
     public static final String DISCONNECTED = "/disconnected";
     public static final String DISCONNECTED_SEND = DISCONNECTED + " %s";
@@ -53,10 +65,10 @@ public final class MessagePatterns {
         return String.format("^%s%s%s", prefix, (args.equals("") ? "" : " "), args);
     }
 
-    public static ChatUser parseAuthMessage(String msg) {
+    public static User parseAuthMessage(String msg) {
         Matcher matcher = AUTH_REC_PATTERN.matcher(msg);
         if (matcher.matches()) {
-            return new ChatUser(matcher.group(1), matcher.group(2), null);
+            return new User(matcher.group(1), matcher.group(2), null);
         } else {
             System.out.printf(EX_MESSAGE_PATTERN, msg);
             return null;
@@ -64,14 +76,33 @@ public final class MessagePatterns {
     }
 
     public static String authResult(boolean result) {
-        String res = (result ? SUCCESS : FAIL);
-        return String.format(AUTH_RESULT_PATTERN, res);
+        return resultView(AUTH_RESULT_PATTERN, result);
     }
 
-    public static ChatUser parseRegMessage(String msg) {
-        Matcher matcher = REG_REC_PATTERN.matcher(msg);
+    public static User parseRegMessage(String msg) {
+        return parseNewUserMessage(REG_REC_PATTERN, msg);
+    }
+
+    public static User parseUserInfoMessage(String msg) {
+        return parseNewUserMessage(USER_INFO_RESULT_REC_PATTERN, msg);
+    }
+
+    public static String[] parseLoginChangeMessage(String msg) {
+        String[] result = new String[2];
+        Matcher matcher = USER_LOGIN_CHANGED_REC_PATTERN.matcher(msg);
         if (matcher.matches()) {
-            return new ChatUser(matcher.group(1), matcher.group(2), matcher.group(3));
+            result[0] = matcher.group(1);
+            result[1] = matcher.group(2);
+        } else {
+            System.out.printf(EX_MESSAGE_PATTERN, msg);
+        }
+        return result;
+    }
+
+    private static User parseNewUserMessage(Pattern pattern, String msg) {
+        Matcher matcher = pattern.matcher(msg);
+        if (matcher.matches()) {
+            return new User(matcher.group(1), matcher.group(2), matcher.group(3));
         } else {
             System.out.printf(EX_MESSAGE_PATTERN, msg);
             return null;
@@ -79,8 +110,16 @@ public final class MessagePatterns {
     }
 
     public static String regResult(boolean result) {
+        return resultView(REG_RESULT_PATTERN, result);
+    }
+
+    public static String updUserInfoResult(boolean result) {
+        return resultView(UPD_USER_INFO_RESULT, result);
+    }
+
+    private static String resultView(String pattern, boolean result) {
         String res = (result ? SUCCESS : FAIL);
-        return String.format(REG_RESULT_PATTERN, res);
+        return String.format(pattern, res);
     }
 
     public static String parseConnectMessage(String msg) {

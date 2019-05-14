@@ -1,5 +1,6 @@
 package client;
 
+import authorization.users.User;
 import message.TextMessage;
 
 import java.util.Set;
@@ -13,4 +14,8 @@ public interface MessageReceiver {
     void userConnected(String login);
 
     void userDisconnected(String login);
+
+    void updateUserInfo(User user);
+
+    void changeUserLogin(String[] oldNewLogin);
 }

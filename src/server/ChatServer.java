@@ -1,9 +1,8 @@
 package server;
 
-import server.authorization.users.User;
 import server.authorization.AuthorizationService;
 import server.authorization.AuthorizationServiceImpl;
-import server.authorization.users.UserRepository;
+import persistence.UserRepository;
 import message.MessagePatterns;
 import message.TextMessage;
 

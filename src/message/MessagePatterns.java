@@ -1,6 +1,6 @@
 package message;
 
-import server.authorization.users.User;
+import server.User;
 
 import java.util.HashSet;
 import java.util.Set;

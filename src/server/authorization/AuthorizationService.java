@@ -1,6 +1,6 @@
 package server.authorization;
 
-import server.authorization.users.User;
+import server.User;
 
 public interface AuthorizationService {
 

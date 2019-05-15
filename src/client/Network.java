@@ -1,7 +1,7 @@
 package client;
 
 import server.authorization.AuthException;
-import server.authorization.users.User;
+import server.User;
 import message.TextMessage;
 
 import java.io.Closeable;

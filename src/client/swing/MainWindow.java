@@ -1,6 +1,6 @@
 package client.swing;
 
-import server.authorization.users.User;
+import server.User;
 import client.Network;
 import client.MessageReceiver;
 import client.UnreadMessage;

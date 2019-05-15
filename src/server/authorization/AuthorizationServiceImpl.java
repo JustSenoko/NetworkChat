@@ -1,8 +1,8 @@
 package server.authorization;
 
-import server.authorization.users.User;
-import server.authorization.users.UserRepository;
+import persistence.UserRepository;
 import message.MessagePatterns;
+import server.User;
 
 import java.sql.SQLException;
 

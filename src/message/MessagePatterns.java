@@ -2,6 +2,8 @@ package message;
 
 import server.User;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -48,7 +50,6 @@ public final class MessagePatterns {
     public static final String DISCONNECTED_SEND = DISCONNECTED + " %s";
     private static final Pattern DISCONNECTED_REC = Pattern.compile(patternConstructor(DISCONNECTED, "(\\w+)"));
 
-
     public static final String MESSAGE_PREFIX = "/w";
     public static final String MESSAGE_SEND_PATTERN = "/w %s %s %s";
     private static final Pattern MESSAGE_REC_PATTERN = Pattern.compile(
@@ -58,6 +59,11 @@ public final class MessagePatterns {
     public static final String USERS_PATTERN = USERS_PREFIX + " %s"; // / users [login1, login2, ...]
     private static final Pattern USERS_REC_PATTERN = Pattern.compile(
             patternConstructor(USERS_PREFIX, "\\[(.+)]"));
+
+    private static final String MSG_LOG_PATTERN = "%s %s %s %s"; //login (1 = in/0 = out) date text
+    private static final Pattern MSG_LOG_REC_PATTERN = Pattern.compile(
+            "^(\\w+) ([01]) (\\d{4}-[01]\\d-[0-3]\\d [012]\\d:[0-5]\\d) (.+)", Pattern.MULTILINE);
+    static final String MSG_DATE_PATTERN = "yyyy-MM-dd HH:mm"; //2019-05-15 14:00
 
     public static final String EX_MESSAGE_PATTERN = "Unknown message pattern: %s%n";
 
@@ -168,5 +174,43 @@ public final class MessagePatterns {
             System.out.printf(EX_MESSAGE_PATTERN, msg);
             return null;
         }
+    }
+
+    public static TextMessage parseLogMessage(String msg, String login) {
+        Matcher matcher = MSG_LOG_REC_PATTERN.matcher(msg);
+        if (matcher.matches()) {
+            String userTo = login;
+            String userFrom = login;
+            LocalDateTime date = parseDate(matcher.group(3));
+            if (matcher.group(2).equals("1")) {
+                userFrom = matcher.group(1);
+            } else {
+                userTo = matcher.group(1);
+            }
+            return new TextMessage(userTo, userFrom, matcher.group(4), date);
+        } else {
+            System.out.printf(EX_MESSAGE_PATTERN, msg);
+            return null;
+        }
+    }
+
+    static LocalDateTime parseDate(String dateString) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(MSG_DATE_PATTERN);
+        return LocalDateTime.parse(dateString, formatter);
+    }
+
+    public static String logMessage(TextMessage msg, String login) {
+        String loginInLog;
+        int direction = 0; //0 - out, 1 - in
+
+        if (msg.getUserTo().equals(login)) {
+            loginInLog = msg.getUserFrom();
+            direction = 1;
+        } else {
+            loginInLog = msg.getUserTo();
+        }
+        return String.format(MSG_LOG_PATTERN, loginInLog, direction,
+                msg.getDateFormatted(MSG_DATE_PATTERN),
+                msg.getMessage());
     }
 }

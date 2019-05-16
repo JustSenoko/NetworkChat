@@ -10,20 +10,20 @@ import java.io.IOException;
 
 class RegistrationDialog extends JDialog {
 
-    private Network network;
-    private JTextField tfUsername;
-    private JTextField tfLogin;
-    private JPasswordField pfPassword;
-    private JPasswordField pfPasswordRepeat;
-    private JLabel lbUsername;
-    private JLabel lbLogin;
-    private JLabel lbPassword;
-    private JLabel lbPasswordRepeat;
-    private JButton btnRegistration;
-    private JButton btnCancel;
+    private final Network network;
+    private final JTextField tfUsername;
+    private final JTextField tfLogin;
+    private final JPasswordField pfPassword;
+    private final JPasswordField pfPasswordRepeat;
+    private final JLabel lbUsername;
+    private final JLabel lbLogin;
+    private final JLabel lbPassword;
+    private final JLabel lbPasswordRepeat;
+    private final JButton btnRegistration;
+    private final JButton btnCancel;
 
-    private JPanel panel;
-    private GridBagConstraints cs;
+    private final JPanel panel;
+    private final GridBagConstraints cs;
 
     RegistrationDialog(JDialog parent, Network network) {
         super(parent, "Логин", true);

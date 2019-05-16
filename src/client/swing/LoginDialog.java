@@ -10,13 +10,13 @@ import java.io.IOException;
 
 class LoginDialog extends JDialog {
     private final JButton btnRegistration;
-    private Network network;
-    private JTextField tfUsername;
-    private JPasswordField pfPassword;
-    private JLabel lbUsername;
-    private JLabel lbPassword;
-    private JButton btnLogin;
-    private JButton btnCancel;
+    private final Network network;
+    private final JTextField tfUsername;
+    private final JPasswordField pfPassword;
+    private final JLabel lbUsername;
+    private final JLabel lbPassword;
+    private final JButton btnLogin;
+    private final JButton btnCancel;
 
     private boolean connected;
 

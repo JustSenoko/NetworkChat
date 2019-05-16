@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public AuthorizationServiceImpl(UserRepository userRepository) {
 

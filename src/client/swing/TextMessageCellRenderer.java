@@ -42,7 +42,7 @@ class TextMessageCellRenderer extends JPanel implements ListCellRenderer<TextMes
                                                   TextMessage textMessage, int index,
                                                   boolean isSelected, boolean cellHasFocus) {
         setBackground(list.getBackground());
-        msgData.setText(textMessage.getDateFormatted());
+        msgData.setText(textMessage.getDateFormatted("HH:mm"));
         msgText.setText(textMessage.getMessage());
         msgUser.setOpaque(true);
 

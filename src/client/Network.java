@@ -1,8 +1,8 @@
 package client;
 
-import server.authorization.AuthException;
-import server.authorization.users.User;
 import message.TextMessage;
+import server.User;
+import server.authorization.AuthException;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -19,15 +19,15 @@ public class Network implements Closeable {
     private DataInputStream in;
     private DataOutputStream out;
 
-    private String hostName;
-    private int port;
-    private MessageReceiver messageReceiver;
+    private final String hostName;
+    private final int port;
+    private final MessageReceiver messageReceiver;
     private UserInfoReceiver userInfoReceiver;
 
     private String login;
     private User user;
 
-    private Thread receiverThread;
+    private final Thread receiverThread;
 
     public Network(String hostName, int port, MessageReceiver messageReceiver) {
         this.hostName = hostName;

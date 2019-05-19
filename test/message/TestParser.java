@@ -1,6 +1,6 @@
 package message;
 
-import server.authorization.users.User;
+import server.User;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -82,5 +82,23 @@ public class TestParser {
         assertNotNull(result);
         assertEquals("old", result[0]);
         assertEquals("new", result[1]);
+    }
+
+    @Test
+    public void parseLogMessageTest() {
+        TextMessage result = parseLogMessage("ivan 1 2019-05-15 14:23 Привет, Пётр!", "petr");
+        assertNotNull(result);
+        assertEquals("ivan", result.getUserFrom());
+        assertEquals("petr", result.getUserTo());
+        assertEquals("2019-05-15 14:23", result.getDateFormatted(MSG_DATE_PATTERN));
+        assertEquals("Привет, Пётр!", result.getMessage());
+
+    }
+
+    @Test
+    public void logMessageTest() {
+        String result = logMessage(new TextMessage("petr", "ivan", "Привет, Пётр!", parseDate("2019-05-15 14:23")), "petr");
+        assertNotNull(result);
+        assertEquals("ivan 1 2019-05-15 14:23 Привет, Пётр!", result);
     }
 }

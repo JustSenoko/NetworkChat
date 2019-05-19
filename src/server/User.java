@@ -1,4 +1,4 @@
-package server.authorization.users;
+package server;
 
 public class User {
     private String login;

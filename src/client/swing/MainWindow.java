@@ -1,16 +1,21 @@
 package client.swing;
 
-import server.authorization.users.User;
-import client.Network;
+import client.history.ChatHistory;
+import client.history.ChatHistoryException;
 import client.MessageReceiver;
+import client.Network;
 import client.UnreadMessage;
 import message.TextMessage;
+import persistence.ChatHistoryFile;
+import server.User;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,8 +25,8 @@ public class MainWindow extends JFrame implements MessageReceiver {
     private static final int SERVER_PORT = 7777;
 
     private final JList<TextMessage> msgList;
-    private Map<String, DefaultListModel<TextMessage>> userMsgModelMap = new HashMap<>();
-    private Map<String, UnreadMessage> userUnreadMsgMap = new HashMap<>();
+    private final Map<String, DefaultListModel<TextMessage>> userMsgModelMap = new HashMap<>();
+    private final Map<String, UnreadMessage> userUnreadMsgMap = new HashMap<>();
 
     private final JTextField messageField;
     private final JList<UnreadMessage> userList;
@@ -30,8 +35,9 @@ public class MainWindow extends JFrame implements MessageReceiver {
 
     private Network network;
     private String userTo = "";
+    private ChatHistory history;
 
-    public MainWindow() {
+    public MainWindow(int logSize, String logFileNameTempl) {
 
         setTitle("Чат");
         setBounds(200,200, 500, 500);
@@ -41,6 +47,9 @@ public class MainWindow extends JFrame implements MessageReceiver {
             public void windowClosing(WindowEvent e) {
                 if (network != null) {
                     network.close();
+                }
+                if (history != null) {
+                    history.flush();
                 }
                 super.windowClosing(e);
             }
@@ -108,6 +117,19 @@ public class MainWindow extends JFrame implements MessageReceiver {
             System.exit(0);
         }
 
+        try {
+            String logFileName = String.format(logFileNameTempl, network.getLogin());
+            history = new ChatHistoryFile(logFileName, logSize);
+            loadChatHistory(history.loadChatHistory(network.getLogin()));
+        } catch (ChatHistoryException e) {
+            e.printStackTrace();
+            showErrorMessage(e.getMessage(), "Лог чата");
+            System.exit(0);
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorMessage("Не удалось загрузить историю чата", "Лог чата");
+        }
+
         setChatTitle(network.getLogin());
         TextMessageCellRenderer msgListCellRenderer = new TextMessageCellRenderer(network.getLogin());
         msgList.setCellRenderer(msgListCellRenderer);
@@ -148,6 +170,8 @@ public class MainWindow extends JFrame implements MessageReceiver {
         msgListModel.add(msgListModel.size(), textMessage);
         messageField.setText("");
         network.sendTextMessage(textMessage);
+
+        addMessageInHistory(textMessage);
     }
 
     @Override
@@ -161,6 +185,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
                 userUnreadMsgMap.get(message.getUserFrom()).incUnreadCount();
                 userList.updateUI();
             }
+            addMessageInHistory(message);
         });
     }
 
@@ -247,8 +272,31 @@ public class MainWindow extends JFrame implements MessageReceiver {
                 userList.updateUI();
             }
             updateUserListView();
+
+            //@TODO обновить этот логин в истории
         });
     }
 
+    @Override
+    public void showErrorMessage(String msg, String title) {
+        JOptionPane.showMessageDialog(MainWindow.this,
+                msg, title, JOptionPane.ERROR_MESSAGE);
+    }
 
+    @Override
+    public void loadChatHistory(List<TextMessage> chatLog) {
+        String currentLogin = network.getLogin();
+        for (TextMessage msg : chatLog) {
+            String login = (msg.getUserFrom().equals(currentLogin)) ? (msg.getUserTo()) : (msg.getUserFrom());
+            userMsgModelMap.putIfAbsent(login, new DefaultListModel<>());
+
+            DefaultListModel<TextMessage> msgListModel = userMsgModelMap.get(login);
+            msgListModel.addElement(msg);
+        }
+    }
+
+    @Override
+    public void addMessageInHistory(TextMessage msg) {
+        history.addMessage(msg, network.getLogin());
+    }
 }

@@ -5,7 +5,7 @@ import client.UnreadMessage;
 import javax.swing.*;
 import java.awt.*;
 
-public class UserListCellRenderer extends JPanel implements ListCellRenderer<UnreadMessage> {
+class UserListCellRenderer extends JPanel implements ListCellRenderer<UnreadMessage> {
 
     private final JLabel lbUserLogin;
     private final JLabel lbUnread;

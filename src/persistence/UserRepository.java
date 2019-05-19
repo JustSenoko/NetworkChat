@@ -1,11 +1,13 @@
-package server.authorization.users;
+package persistence;
+
+import server.User;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserRepository {
-    private Connection connection;
+    private final Connection connection;
 
     public UserRepository(Connection connection) throws SQLException {
 

@@ -1,9 +1,8 @@
 package server;
 
-import server.authorization.users.User;
 import server.authorization.AuthorizationService;
 import server.authorization.AuthorizationServiceImpl;
-import server.authorization.users.UserRepository;
+import persistence.UserRepository;
 import message.MessagePatterns;
 import message.TextMessage;
 
@@ -22,18 +21,21 @@ import java.util.Set;
 
 import static message.MessagePatterns.USERS_PATTERN;
 
-public class ChatServer {
+class ChatServer {
 
     private static final int SERVER_PORT = 7777;
-    private AuthorizationService authService;
-    private Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
+    private final AuthorizationService authService;
+    private final Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) {
 
         AuthorizationService auth;
         try {
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/network_chat",
-                    "root", "senoko");
+
+            String url = "jdbc:mysql://localhost:3306/network_chat?" +
+                    "useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false" +
+                    "&serverTimezone=Europe/Moscow&useSSL=false";
+            Connection connection = DriverManager.getConnection(url, "root", "senoko");
             UserRepository userRepository = new UserRepository(connection);
             auth = new AuthorizationServiceImpl(userRepository);
         } catch (SQLException e) {

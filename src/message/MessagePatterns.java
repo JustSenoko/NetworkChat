@@ -1,6 +1,6 @@
 package message;
 
-import server.authorization.users.User;
+import server.User;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,7 +47,6 @@ public final class MessagePatterns {
     public static final String DISCONNECTED = "/disconnected";
     public static final String DISCONNECTED_SEND = DISCONNECTED + " %s";
     private static final Pattern DISCONNECTED_REC = Pattern.compile(patternConstructor(DISCONNECTED, "(\\w+)"));
-
 
     public static final String MESSAGE_PREFIX = "/w";
     public static final String MESSAGE_SEND_PATTERN = "/w %s %s %s";

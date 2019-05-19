@@ -1,14 +1,14 @@
 package server.authorization;
 
-import server.authorization.users.User;
-import server.authorization.users.UserRepository;
+import persistence.UserRepository;
 import message.MessagePatterns;
+import server.User;
 
 import java.sql.SQLException;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     public AuthorizationServiceImpl(UserRepository userRepository) {
 

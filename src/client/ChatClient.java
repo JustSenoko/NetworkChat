@@ -8,7 +8,7 @@ class ChatClient {
 
     private static MainWindow mainWindow;
     private static final int logSize = 100;
-    private static final String logFileNameTempl = "chatLog_%s.txt"; // chatlog_login.txt
+    private static final String logFileNameTempl = "chatHistory_%s.txt"; // chatHistory_login.txt
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> mainWindow = new MainWindow(logSize, logFileNameTempl));

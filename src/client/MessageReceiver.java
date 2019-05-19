@@ -22,7 +22,7 @@ public interface MessageReceiver {
 
     void showErrorMessage(String msg, String title);
 
-    void loadChatLog(List<TextMessage> chatLog);
+    void loadChatHistory(List<TextMessage> chatLog);
 
-    void logMessage(TextMessage msg);
+    void addMessageInHistory(TextMessage msg);
 }

@@ -1,11 +1,12 @@
 package client.swing;
 
-import client.LogException;
+import client.history.ChatHistory;
+import client.history.ChatHistoryException;
 import client.MessageReceiver;
 import client.Network;
 import client.UnreadMessage;
 import message.TextMessage;
-import persistence.MessageRepository;
+import persistence.ChatHistoryFile;
 import server.User;
 
 import javax.swing.*;
@@ -34,7 +35,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
 
     private Network network;
     private String userTo = "";
-    private MessageRepository msgRep;
+    private ChatHistory history;
 
     public MainWindow(int logSize, String logFileNameTempl) {
 
@@ -46,6 +47,9 @@ public class MainWindow extends JFrame implements MessageReceiver {
             public void windowClosing(WindowEvent e) {
                 if (network != null) {
                     network.close();
+                }
+                if (history != null) {
+                    history.flush();
                 }
                 super.windowClosing(e);
             }
@@ -115,9 +119,9 @@ public class MainWindow extends JFrame implements MessageReceiver {
 
         try {
             String logFileName = String.format(logFileNameTempl, network.getLogin());
-            msgRep = new MessageRepository(logFileName, logSize);
-            loadChatLog(msgRep.loadMessages(network.getLogin()));
-        } catch (LogException e) {
+            history = new ChatHistoryFile(logFileName, logSize);
+            loadChatHistory(history.loadChatHistory(network.getLogin()));
+        } catch (ChatHistoryException e) {
             e.printStackTrace();
             showErrorMessage(e.getMessage(), "Лог чата");
             System.exit(0);
@@ -167,7 +171,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
         messageField.setText("");
         network.sendTextMessage(textMessage);
 
-        logMessage(textMessage);
+        addMessageInHistory(textMessage);
     }
 
     @Override
@@ -181,7 +185,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
                 userUnreadMsgMap.get(message.getUserFrom()).incUnreadCount();
                 userList.updateUI();
             }
-            logMessage(message);
+            addMessageInHistory(message);
         });
     }
 
@@ -280,7 +284,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
     }
 
     @Override
-    public void loadChatLog(List<TextMessage> chatLog) {
+    public void loadChatHistory(List<TextMessage> chatLog) {
         String currentLogin = network.getLogin();
         for (TextMessage msg : chatLog) {
             String login = (msg.getUserFrom().equals(currentLogin)) ? (msg.getUserTo()) : (msg.getUserFrom());
@@ -292,12 +296,7 @@ public class MainWindow extends JFrame implements MessageReceiver {
     }
 
     @Override
-    public void logMessage(TextMessage msg) {
-        try {
-            msgRep.logMessage(msg, network.getLogin());
-        } catch (IOException e) {
-            showErrorMessage("Не удалось сохранить историю сообщений", "Ошибка истории сообщений");
-            e.printStackTrace();
-        }
+    public void addMessageInHistory(TextMessage msg) {
+        history.addMessage(msg, network.getLogin());
     }
 }

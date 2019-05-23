@@ -24,7 +24,7 @@ public class ChatHistoryFile implements ChatHistory {
     private static final String MSG_LOG_PATTERN = "%s %s %s %s"; //login (1 = in/0 = out) date text
     private static final Pattern MSG_LOG_REC_PATTERN = Pattern.compile(
             "^(\\w+) ([01]) (\\d{4}-[01]\\d-[0-3]\\d [012]\\d:[0-5]\\d) (.+)", Pattern.MULTILINE);
-    private static final String MSG_DATE_PATTERN = "yyyy-MM-dd HH:mm"; //2019-05-15 14:00
+    public static final String MSG_DATE_PATTERN = "yyyy-MM-dd HH:mm"; //2019-05-15 14:00
 
     public ChatHistoryFile(String fileName, int logSize) throws ChatHistoryException {
         this.logSize = logSize;
@@ -97,8 +97,7 @@ public class ChatHistoryFile implements ChatHistory {
         historyWriter.flush();
     }
 
-    @Override
-    public TextMessage parseHistoryMessage(String msg, String login) {
+     public static TextMessage parseHistoryMessage(String msg, String login) {
         Matcher matcher = MSG_LOG_REC_PATTERN.matcher(msg);
         if (matcher.matches()) {
             String userTo = login;
@@ -116,13 +115,12 @@ public class ChatHistoryFile implements ChatHistory {
         }
     }
 
-    private LocalDateTime parseDate(String dateString) {
+    public static LocalDateTime parseDate(String dateString) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(MSG_DATE_PATTERN);
         return LocalDateTime.parse(dateString, formatter);
     }
 
-    @Override
-    public String historyMessage(TextMessage msg, String login) {
+    public static String historyMessage(TextMessage msg, String login) {
         String loginInLog;
         int direction = 0; //0 - out, 1 - in
 

@@ -18,12 +18,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static message.MessagePatterns.USERS_PATTERN;
 
 class ChatServer {
 
     private static final int SERVER_PORT = 7777;
+    private ExecutorService executorService;
     private final AuthorizationService authService;
     private final Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
 
@@ -34,7 +37,7 @@ class ChatServer {
 
             String url = "jdbc:mysql://localhost:3306/network_chat?" +
                     "useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false" +
-                    "&serverTimezone=Europe/Moscow&useSSL=false";
+                    "&serverTimezone=Europe/Moscow&useSSL=false&allowPublicKeyRetrieval=true";
             Connection connection = DriverManager.getConnection(url, "root", "senoko");
             UserRepository userRepository = new UserRepository(connection);
             auth = new AuthorizationServiceImpl(userRepository);
@@ -50,8 +53,10 @@ class ChatServer {
         this.authService = authService;
     }
 
-
     private void start() {
+
+        this.executorService = Executors.newCachedThreadPool();
+
         try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
             System.out.println("Server started!");
             while (true) {
@@ -97,6 +102,7 @@ class ChatServer {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        executorService.shutdown();
     }
 
     private boolean registerNewUser(String regMessage) {
@@ -196,5 +202,9 @@ class ChatServer {
             clientHandlerMap.remove(oldLogin);
             sendUserInfoMessage(newUserInfo);
         }
+    }
+
+    ExecutorService getExecutorService() {
+        return executorService;
     }
 }

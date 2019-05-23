@@ -22,44 +22,42 @@ class ClientHandler {
         this.login = login;
         this.socket = socket;
         this.chatServer = chatServer;
-
         start();
     }
 
     private void start() throws IOException {
-
-        Thread receiveThread = new Thread(() -> {
-            try (DataInputStream in = new DataInputStream(socket.getInputStream())) {
-                boolean clientDisconnected = false;
-                while (!clientDisconnected) {
-                    String msg = in.readUTF();
-                    String msgCommand = msg.split(" ")[0];
-                    switch (msgCommand) {
-                        case MESSAGE_PREFIX:
-                            TextMessage textMessage = MessagePatterns.parseSendMessage(msg);
-                            if (textMessage != null) {
-                                chatServer.sendTextMessage(textMessage);
-                            }
-                            break;
-                        case DISCONNECTED:
-                            chatServer.unsubscribe(login);
-                            clientDisconnected = true;
-                            break;
-                        case USER_INFO_PREFIX:
-                            User newUserInfo = MessagePatterns.parseUserInfoMessage(msg);
-                            chatServer.updateUserInfo(login, newUserInfo);
-                            break;
-                        default:
-                            System.out.printf(EX_MESSAGE_PATTERN, msg);
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-
+        chatServer.getExecutorService().execute(this::receiveMessages);
         out = new DataOutputStream(socket.getOutputStream());
-        receiveThread.start();
+    }
+
+    private void receiveMessages() {
+        try (DataInputStream in = new DataInputStream(socket.getInputStream())) {
+            boolean clientDisconnected = false;
+            while (!clientDisconnected) {
+                String msg = in.readUTF();
+                String msgCommand = msg.split(" ")[0];
+                switch (msgCommand) {
+                    case MESSAGE_PREFIX:
+                        TextMessage textMessage = MessagePatterns.parseSendMessage(msg);
+                        if (textMessage != null) {
+                            chatServer.sendTextMessage(textMessage);
+                        }
+                        break;
+                    case DISCONNECTED:
+                        chatServer.unsubscribe(login);
+                        clientDisconnected = true;
+                        break;
+                    case USER_INFO_PREFIX:
+                        User newUserInfo = MessagePatterns.parseUserInfoMessage(msg);
+                        chatServer.updateUserInfo(login, newUserInfo);
+                        break;
+                    default:
+                        System.out.printf(EX_MESSAGE_PATTERN, msg);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setLogin(String login) {

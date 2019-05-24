@@ -1,13 +1,15 @@
 package message;
 
-import server.User;
 import org.junit.Test;
+import server.User;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static message.MessagePatterns.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static persistence.ChatHistoryFile.*;
 
 public class TestParser {
 
@@ -85,19 +87,18 @@ public class TestParser {
     }
 
     @Test
-    public void parseLogMessageTest() {
-        TextMessage result = parseLogMessage("ivan 1 2019-05-15 14:23 Привет, Пётр!", "petr");
+    public void parseHistoryMessageTest() {
+        TextMessage result = parseHistoryMessage("ivan 1 2019-05-15 14:23 Привет, Пётр!", "petr");
         assertNotNull(result);
         assertEquals("ivan", result.getUserFrom());
         assertEquals("petr", result.getUserTo());
         assertEquals("2019-05-15 14:23", result.getDateFormatted(MSG_DATE_PATTERN));
         assertEquals("Привет, Пётр!", result.getMessage());
-
     }
 
     @Test
     public void logMessageTest() {
-        String result = logMessage(new TextMessage("petr", "ivan", "Привет, Пётр!", parseDate("2019-05-15 14:23")), "petr");
+        String result = historyMessage(new TextMessage("petr", "ivan", "Привет, Пётр!", parseDate("2019-05-15 14:23")), "petr");
         assertNotNull(result);
         assertEquals("ivan 1 2019-05-15 14:23 Привет, Пётр!", result);
     }

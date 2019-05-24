@@ -12,8 +12,4 @@ public interface ChatHistory {
     List<TextMessage> loadChatHistory(String login) throws IOException;
 
     void flush();
-
-    TextMessage parseHistoryMessage(String msg, String login);
-
-    String historyMessage(TextMessage msg, String login);
 }

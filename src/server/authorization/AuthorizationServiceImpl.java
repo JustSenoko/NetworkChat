@@ -5,14 +5,19 @@ import message.MessagePatterns;
 import server.User;
 
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
 
     private final UserRepository userRepository;
+    private final Logger logger;
+    private final String className = AuthorizationServiceImpl.class.getName();
 
-    public AuthorizationServiceImpl(UserRepository userRepository) {
+    public AuthorizationServiceImpl(UserRepository userRepository, Logger logger) {
 
         this.userRepository = userRepository;
+        this.logger = logger;
     }
 
     @Override
@@ -38,7 +43,9 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public boolean addUser(User user) {
         if (userRepository.findUserByLogin(user.getLogin()) != null) {
-            System.out.printf("User %s already exists%n", user.getLogin());
+            logger.logp(Level.WARNING,
+                    className, "addUser",
+                    String.format("User %s already exists%n", user.getLogin()));
             return false;
         }
         try {
@@ -47,7 +54,9 @@ public class AuthorizationServiceImpl implements AuthorizationService {
             e.printStackTrace();
             return false;
         }
-        System.out.printf("User %s registered successful!%n", user.getLogin());
+        logger.logp(Level.INFO,
+                className, "addUser",
+                String.format("User %s registered successful!%n", user.getLogin()));
         return true;
     }
 

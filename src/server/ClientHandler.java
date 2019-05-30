@@ -7,6 +7,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static message.MessagePatterns.*;
 
@@ -15,13 +17,17 @@ class ClientHandler {
     private final Socket socket;
     private String login;
     private final ChatServer chatServer;
+    private final Logger logger;
     private DataOutputStream out;
+    private final String className = ClientHandler.class.getName();
 
-    ClientHandler(String login, Socket socket, ChatServer chatServer) throws IOException {
+    ClientHandler(String login, Socket socket, ChatServer chatServer, Logger logger) throws IOException {
 
         this.login = login;
         this.socket = socket;
         this.chatServer = chatServer;
+        this.logger = logger;
+
         start();
     }
 
@@ -52,7 +58,9 @@ class ClientHandler {
                         chatServer.updateUserInfo(login, newUserInfo);
                         break;
                     default:
-                        System.out.printf(EX_MESSAGE_PATTERN, msg);
+                        logger.logp(Level.WARNING,
+                                className, "receiveMessages",
+                                String.format(EX_MESSAGE_PATTERN, msg));
                 }
             }
         } catch (IOException e) {
@@ -66,6 +74,8 @@ class ClientHandler {
 
     void sendMessage(String msg) throws IOException {
         out.writeUTF(msg);
-        System.out.println(msg);
+        logger.logp(Level.FINE,
+                className, "sendMessage",
+                msg);
     }
 }

@@ -1,18 +1,22 @@
 package server.authorization;
 
-import persistence.UserRepository;
 import message.MessagePatterns;
+import persistence.UserRepository;
 import server.User;
 
 import java.sql.SQLException;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
 
 public class AuthorizationServiceImpl implements AuthorizationService {
 
     private final UserRepository userRepository;
+    private static final Logger LOGGER = Logger.getLogger(AuthorizationServiceImpl.class.getName());
 
-    public AuthorizationServiceImpl(UserRepository userRepository) {
+    public AuthorizationServiceImpl(UserRepository userRepository, FileHandler fileHandler) {
 
         this.userRepository = userRepository;
+        LOGGER.addHandler(fileHandler);
     }
 
     @Override
@@ -38,7 +42,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public boolean addUser(User user) {
         if (userRepository.findUserByLogin(user.getLogin()) != null) {
-            System.out.printf("User %s already exists%n", user.getLogin());
+            LOGGER.warning(String.format("User %s already exists%n", user.getLogin()));
             return false;
         }
         try {
@@ -47,7 +51,7 @@ public class AuthorizationServiceImpl implements AuthorizationService {
             e.printStackTrace();
             return false;
         }
-        System.out.printf("User %s registered successful!%n", user.getLogin());
+        LOGGER.info(String.format("User %s registered successful!%n", user.getLogin()));
         return true;
     }
 

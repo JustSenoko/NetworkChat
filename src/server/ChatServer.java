@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.FileHandler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
@@ -30,7 +31,9 @@ class ChatServer {
 
     private static final int SERVER_PORT = 7777;
     private ExecutorService executorService;
-    private static final Logger logger = Logger.getLogger(ChatServer.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ChatServer.class.getName());
+    private static final String LOG_FILE_NAME = "log_file.log";
+    private static FileHandler logFileHandler;
     private final AuthorizationService authService;
     private final Map<String, ClientHandler> clientHandlerMap = Collections.synchronizedMap(new HashMap<>());
 
@@ -38,9 +41,9 @@ class ChatServer {
 
         AuthorizationService auth;
         try {
-            FileHandler fileHandler = new FileHandler("log_file.log", true);
-            fileHandler.setFormatter(new SimpleFormatter());
-            logger.addHandler(fileHandler);
+            logFileHandler = new FileHandler(LOG_FILE_NAME, true);
+            logFileHandler.setFormatter(new SimpleFormatter());
+            LOGGER.addHandler(logFileHandler);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -51,10 +54,10 @@ class ChatServer {
                     "&serverTimezone=Europe/Moscow&useSSL=false&allowPublicKeyRetrieval=true";
             Connection connection = DriverManager.getConnection(url, "root", "senoko");
             UserRepository userRepository = new UserRepository(connection);
-            auth = new AuthorizationServiceImpl(userRepository, logger);
+            auth = new AuthorizationServiceImpl(userRepository, logFileHandler);
         } catch (SQLException e) {
             e.printStackTrace();
-            logger.severe("Не удалось подключиться к базе SQL: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Не удалось подключиться к базе SQL", e);
             return;
         }
         ChatServer chatServer = new ChatServer(auth);
@@ -70,12 +73,12 @@ class ChatServer {
         this.executorService = Executors.newCachedThreadPool();
 
         try (ServerSocket serverSocket = new ServerSocket(SERVER_PORT)) {
-            logger.info("Server started!");
+            LOGGER.info("Server started!");
             while (true) {
                 Socket socket = serverSocket.accept();
                 DataInputStream inp = new DataInputStream(socket.getInputStream());
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                logger.info("New client connected!");
+                LOGGER.info("New client connected!");
                 User user;
                 try {
                     String inpMessage = inp.readUTF();
@@ -100,12 +103,12 @@ class ChatServer {
 
                 User userDB = authService.authUser(user);
                 if (userDB != null && !userIsOnline(userDB.getLogin())) {
-                    logger.info(String.format("User %s authorized successful!%n", userDB.getLogin()));
+                    LOGGER.info(String.format("User %s authorized successful!%n", userDB.getLogin()));
                     out.writeUTF(MessagePatterns.authResult(true));
                     out.flush();
                     subscribe(userDB, socket);
                 } else {
-                    logger.warning(String.format("Wrong server.authorization for user %s%n", user.getLogin()));
+                    LOGGER.warning(String.format("Wrong server.authorization for user %s%n", user.getLogin()));
                     out.writeUTF(MessagePatterns.authResult(false));
                     out.flush();
                     socket.close();
@@ -113,7 +116,7 @@ class ChatServer {
             }
         } catch (IOException ex) {
             ex.printStackTrace();
-            logger.severe("Проблемы с подключением к сокету: " + ex.getMessage());
+            LOGGER.log(Level.SEVERE, "Проблемы с подключением к сокету", ex);
         }
         executorService.shutdown();
     }
@@ -130,13 +133,13 @@ class ChatServer {
 
         if (!userIsOnline(userTo)) {
             msg = String.format("Не удалось отправить сообщение. Пользователь %s не в сети.%n", userTo);
-            logger.warning(msg);
+            LOGGER.warning(msg);
             userTo = userFrom;
         }
         if (userTo == null || userTo.trim().isEmpty()) {
             return;
         }
-        logger.fine(String.format("%s -> %s: %s%n", userFrom, userTo, msg));
+        LOGGER.fine(String.format("%s -> %s: %s%n", userFrom, userTo, msg));
         String msgText = String.format(MessagePatterns.MESSAGE_SEND_PATTERN, userTo, userFrom, msg);
         sendMessage(userTo, msgText);
     }
@@ -173,7 +176,7 @@ class ChatServer {
 
     private void subscribe(User user, Socket socket) throws IOException {
         String login = user.getLogin();
-        clientHandlerMap.put(login, new ClientHandler(login, socket, this, logger));
+        clientHandlerMap.put(login, new ClientHandler(login, socket, this, logFileHandler));
         String msg = String.format(MessagePatterns.CONNECTED_SEND, login);
         sendToAllUsersExceptLogin(login, msg);
 
